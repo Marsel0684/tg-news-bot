@@ -4,4 +4,4 @@ beautifulsoup4==4.12.3
 python-dotenv==1.0.1
 APScheduler==3.10.4
 telethon==1.36.0      # опционально, для парсинга TG-каналов
-lxml==5.2.1           # быстрый парсер для BeautifulSoup
+
