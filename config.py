@@ -38,7 +38,8 @@ INCLUDE_KEYWORDS: list[str] = [
     "нейросеть", "AI", "ИИ", "чат-бот", "chatbot",
     "Instagram", "VK", "TikTok", "YouTube",
     "email-маркетинг", "SEO", "SEM",
-    "advertising", "marketing", "targeting", "digital",
+    "advertising", "marketing", "targeting", "digital", "реклама авито", "авито", 
+    "Avito ADS", "Avito", 
 ]
 
 # Слова-стоп (если есть — пропускаем новость)
@@ -92,31 +93,6 @@ RSS_SOURCES: list[dict] = [
         "lang": "ru",
         "emoji": "✍️",
     },
-    # Международные
-    {
-        "name": "Search Engine Land",
-        "url": "https://searchengineland.com/feed",
-        "lang": "en",
-        "emoji": "🔍",
-    },
-    {
-        "name": "Marketing Dive",
-        "url": "https://www.marketingdive.com/feeds/news/",
-        "lang": "en",
-        "emoji": "🌊",
-    },
-    {
-        "name": "Social Media Examiner",
-        "url": "https://www.socialmediaexaminer.com/feed/",
-        "lang": "en",
-        "emoji": "📲",
-    },
-    {
-        "name": "AdWeek",
-        "url": "https://www.adweek.com/feed/",
-        "lang": "en",
-        "emoji": "🏆",
-    },
 ]
 
 # ── Telethon (опционально) ────────────────────────────────
@@ -128,8 +104,19 @@ TELETHON_API_HASH: str = os.getenv("TELETHON_API_HASH", "")
 TG_CHANNELS_TO_PARSE: list[str] = [
     # "@digitalagency_list",
     # "@targetads_news",
-    # "@cossa_official",
+    # "@vakansii_infobiz",
     # "@vcru",
+    # "@mari_vakansii",
+    # "@algoritm_schools",
+    # "@infohilights",
+    # "@avito_for_infobiz",
+    # "@avito",
+    # "@avito_career",
+    # "@avito_b2b",
+    # "@vk_ads",
+    # "@marylevelia_ads",
+    # "@adsisnotacrime",
+    # "@
 ]
 
 # ── Прокси (опционально) ─────────────────────────────────
