@@ -13,14 +13,14 @@ CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")  # напр. @my_channel или -1
 
 # ── Расписание ───────────────────────────────────────────
 # Как часто парсить новости (в минутах)
-PARSE_INTERVAL_MINUTES: int = int(os.getenv("PARSE_INTERVAL_MINUTES", "30"))
+PARSE_INTERVAL_MINUTES: int = int(os.getenv("PARSE_INTERVAL_MINUTES", "360"))
 
 # Максимум постов за один прогон (антиспам)
 MAX_POSTS_PER_RUN: int = int(os.getenv("MAX_POSTS_PER_RUN", "5"))
 
 # Часы тишины: не постить с 23:00 до 07:00 (МСК)
 QUIET_HOURS_START: int = int(os.getenv("QUIET_HOURS_START", "23"))
-QUIET_HOURS_END: int = int(os.getenv("QUIET_HOURS_END", "7"))
+QUIET_HOURS_END: int = int(os.getenv("QUIET_HOURS_END", "10"))
 
 # ── База данных ───────────────────────────────────────────
 DB_PATH: str = os.getenv("DB_PATH", "news.db")
