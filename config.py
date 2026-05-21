@@ -116,7 +116,7 @@ TG_CHANNELS_TO_PARSE: list[str] = [
     # "@vk_ads",
     # "@marylevelia_ads",
     # "@adsisnotacrime",
-    # "@
+    # "@jobfortarget",
 ]
 
 # ── Прокси (опционально) ─────────────────────────────────
