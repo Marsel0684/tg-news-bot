@@ -1,5 +1,6 @@
 """
-parser.py — парсинг RSS-лент и Telegram-каналов.
+parser.py — парсинг RSS-лент и публичных Telegram-каналов через t.me/s/
+Telethon не требуется.
 """
 
 import asyncio
@@ -12,6 +13,12 @@ from bs4 import BeautifulSoup
 from config import RSS_SOURCES, HTTP_PROXY, TG_CHANNELS_TO_PARSE
 
 logger = logging.getLogger(__name__)
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                  "AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/124.0.0.0 Safari/537.36"
+}
 
 
 @dataclass
@@ -26,27 +33,21 @@ class NewsItem:
 
 
 def _clean_html(raw: str) -> str:
-    """Убираем HTML-теги, оставляем чистый текст."""
     if not raw:
         return ""
     soup = BeautifulSoup(raw, "html.parser")
     text = soup.get_text(separator=" ", strip=True)
-    # Обрезаем до 300 символов
     return text[:300] + ("…" if len(text) > 300 else "")
 
 
 def _extract_image(entry) -> str | None:
-    """Пытаемся вытащить превью-картинку из RSS-записи."""
-    # media:content
     media = getattr(entry, "media_content", None)
     if media and isinstance(media, list) and media[0].get("url"):
         return media[0]["url"]
-    # enclosures
     if hasattr(entry, "enclosures") and entry.enclosures:
         for enc in entry.enclosures:
             if enc.get("type", "").startswith("image"):
                 return enc.get("href") or enc.get("url")
-    # og:image из summary html
     summary_raw = getattr(entry, "summary", "")
     if summary_raw:
         soup = BeautifulSoup(summary_raw, "html.parser")
@@ -66,144 +67,151 @@ def _parse_date(entry) -> datetime | None:
     return None
 
 
+# ── RSS ───────────────────────────────────────────────────
+
 def parse_rss_source(source: dict) -> list[NewsItem]:
-    """Синхронный парсинг одного RSS-источника."""
     name = source["name"]
     url = source["url"]
     emoji = source.get("emoji", "📰")
     items: list[NewsItem] = []
 
     try:
-        proxies = {"http://": HTTP_PROXY, "https://": HTTP_PROXY} if HTTP_PROXY else None
-        # feedparser умеет сам делать HTTP, но мы контролируем прокси
-        headers = {"User-Agent": "Mozilla/5.0 TelegramNewsBot/1.0"}
-
         if HTTP_PROXY:
             import urllib.request
-            proxy_handler = urllib.request.ProxyHandler({"http": HTTP_PROXY, "https": HTTP_PROXY})
+            proxy_handler = urllib.request.ProxyHandler(
+                {"http": HTTP_PROXY, "https": HTTP_PROXY}
+            )
             opener = urllib.request.build_opener(proxy_handler)
             feed_data = opener.open(url, timeout=15).read()
             feed = feedparser.parse(feed_data)
         else:
-            feed = feedparser.parse(url, agent=headers["User-Agent"], request_headers=headers)
+            feed = feedparser.parse(url, request_headers=HEADERS)
 
         if feed.bozo and not feed.entries:
-            logger.warning(f"[{name}] Плохой RSS (bozo): {feed.bozo_exception}")
+            logger.warning(f"[{name}] Плохой RSS: {feed.bozo_exception}")
             return []
 
-        for entry in feed.entries[:20]:  # берём максимум 20 свежих
+        for entry in feed.entries[:20]:
             title = (entry.get("title") or "").strip()
             link = (entry.get("link") or "").strip()
-
             if not title or not link:
                 continue
 
-            summary_raw = entry.get("summary") or entry.get("description") or ""
-            summary = _clean_html(summary_raw)
-            image = _extract_image(entry)
-            published = _parse_date(entry)
-
-            items.append(
-                NewsItem(
-                    title=title,
-                    url=link,
-                    summary=summary,
-                    source_name=name,
-                    source_emoji=emoji,
-                    published_at=published,
-                    image_url=image,
-                )
+            summary = _clean_html(
+                entry.get("summary") or entry.get("description") or ""
             )
+            items.append(NewsItem(
+                title=title,
+                url=link,
+                summary=summary,
+                source_name=name,
+                source_emoji=emoji,
+                published_at=_parse_date(entry),
+                image_url=_extract_image(entry),
+            ))
 
-        logger.info(f"[{name}] Получено: {len(items)} записей")
+        logger.info(f"[{name}] RSS: {len(items)} записей")
 
     except Exception as e:
-        logger.error(f"[{name}] Ошибка парсинга: {e}")
+        logger.error(f"[{name}] Ошибка RSS: {e}")
 
     return items
 
 
+# ── Telegram web (t.me/s/) — без Telethon ─────────────────
+
+def parse_tg_channel_web(channel: str) -> list[NewsItem]:
+    """
+    Парсинг публичного Telegram-канала через t.me/s/username.
+    Работает без API-ключей для любого публичного канала.
+    """
+    username = channel.lstrip("@")
+    url = f"https://t.me/s/{username}"
+    items: list[NewsItem] = []
+
+    try:
+        resp = httpx.get(url, headers=HEADERS, timeout=15, follow_redirects=True)
+        if resp.status_code != 200:
+            logger.warning(f"[{channel}] HTTP {resp.status_code}")
+            return []
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        messages = soup.find_all("div", class_="tgme_widget_message_wrap")
+
+        if not messages:
+            logger.warning(f"[{channel}] Посты не найдены — канал закрытый или пустой")
+            return []
+
+        for msg in messages[-20:]:  # последние 20 постов
+            # Текст поста
+            text_el = msg.find("div", class_="tgme_widget_message_text")
+            if not text_el:
+                continue
+            text = text_el.get_text(separator=" ", strip=True)
+            if len(text) < 30:
+                continue
+
+            # Ссылка на пост
+            link_el = msg.find("a", class_="tgme_widget_message_date")
+            post_url = link_el["href"] if link_el else url
+
+            # Картинка (если есть)
+            image_url = None
+            img_el = msg.find("a", class_="tgme_widget_message_photo_wrap")
+            if img_el and img_el.get("style"):
+                style = img_el["style"]
+                if "url(" in style:
+                    image_url = style.split("url(")[1].split(")")[0].strip("'\"")
+
+            # Заголовок = первая строка текста
+            title = text.split("\n")[0][:150].strip()
+            summary = text[:300]
+
+            items.append(NewsItem(
+                title=title,
+                url=post_url,
+                summary=summary,
+                source_name=f"@{username}",
+                source_emoji="📣",
+                image_url=image_url,
+            ))
+
+        logger.info(f"[{channel}] TG web: {len(items)} постов")
+
+    except Exception as e:
+        logger.error(f"[{channel}] Ошибка TG web парсинга: {e}")
+
+    return items
+
+
+# ── Главная функция ────────────────────────────────────────
+
 async def parse_all_sources() -> list[NewsItem]:
-    """Асинхронно парсим все RSS-источники."""
     loop = asyncio.get_event_loop()
 
-    tasks = [
+    # RSS источники — параллельно
+    rss_tasks = [
         loop.run_in_executor(None, parse_rss_source, src)
         for src in RSS_SOURCES
     ]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    # TG каналы — параллельно
+    tg_tasks = [
+        loop.run_in_executor(None, parse_tg_channel_web, ch)
+        for ch in TG_CHANNELS_TO_PARSE
+    ]
+
+    all_results = await asyncio.gather(
+        *rss_tasks, *tg_tasks,
+        return_exceptions=True
+    )
 
     all_items: list[NewsItem] = []
-    for result in results:
+    for result in all_results:
         if isinstance(result, Exception):
             logger.error(f"Исключение при парсинге: {result}")
         elif isinstance(result, list):
             all_items.extend(result)
 
-    # Если настроены Telegram-каналы — парсим через Telethon
-    if TG_CHANNELS_TO_PARSE:
-        tg_items = await parse_telegram_channels()
-        all_items.extend(tg_items)
-
-    logger.info(f"Итого собрано новостей: {len(all_items)}")
+    logger.info(f"Итого собрано: {len(all_items)} новостей")
     return all_items
-
-
-# ── Telethon-парсинг Telegram-каналов (опционально) ───────
-
-async def parse_telegram_channels() -> list[NewsItem]:
-    """
-    Парсинг открытых Telegram-каналов через Telethon.
-    Требует TELETHON_API_ID и TELETHON_API_HASH в .env
-    """
-    from config import TELETHON_API_ID, TELETHON_API_HASH
-
-    if not TELETHON_API_ID or not TELETHON_API_HASH:
-        logger.debug("Telethon не настроен — пропускаем TG-каналы")
-        return []
-
-    try:
-        from telethon import TelegramClient
-        from telethon.tl.functions.messages import GetHistoryRequest
-    except ImportError:
-        logger.warning("telethon не установлен. pip install telethon")
-        return []
-
-    items: list[NewsItem] = []
-
-    async with TelegramClient("tg_parser", int(TELETHON_API_ID), TELETHON_API_HASH) as client:
-        for channel_username in TG_CHANNELS_TO_PARSE:
-            try:
-                channel = await client.get_entity(channel_username)
-                history = await client(GetHistoryRequest(
-                    peer=channel,
-                    limit=20,
-                    offset_date=None,
-                    offset_id=0,
-                    max_id=0,
-                    min_id=0,
-                    add_offset=0,
-                    hash=0,
-                ))
-                for msg in history.messages:
-                    if not msg.message:
-                        continue
-                    text = msg.message.strip()
-                    if len(text) < 30:
-                        continue
-                    title = text.split("\n")[0][:120]
-                    # Формируем ссылку на пост
-                    url = f"https://t.me/{channel_username.lstrip('@')}/{msg.id}"
-                    items.append(NewsItem(
-                        title=title,
-                        url=url,
-                        summary=text[:300],
-                        source_name=channel_username,
-                        source_emoji="📣",
-                        published_at=msg.date,
-                    ))
-                logger.info(f"[{channel_username}] TG: {len(history.messages)} сообщений")
-            except Exception as e:
-                logger.error(f"[{channel_username}] Telethon ошибка: {e}")
-
-    return items
