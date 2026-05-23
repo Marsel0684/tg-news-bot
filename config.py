@@ -102,21 +102,21 @@ TELETHON_API_HASH: str = os.getenv("TELETHON_API_HASH", "")
 
 # Список Telegram-каналов для парсинга (публичные)
 TG_CHANNELS_TO_PARSE: list[str] = [
-    # "@digitalagency_list",
-    # "@targetads_news",
-    # "@vakansii_infobiz",
-    # "@vcru",
-    # "@mari_vakansii",
-    # "@algoritm_schools",
-    # "@infohilights",
-    # "@avito_for_infobiz",
-    # "@avito",
-    # "@avito_career",
-    # "@avito_b2b",
-    # "@vk_ads",
-    # "@marylevelia_ads",
-    # "@adsisnotacrime",
-    # "@jobfortarget",
+     "@digitalagency_list",
+     "@targetads_news",
+     "@vakansii_infobiz",
+     "@vcru",
+     "@mari_vakansii",
+     "@algoritm_schools",
+     "@infohilights",
+     "@avito_for_infobiz",
+     "@avito",
+     "@avito_career",
+     "@avito_b2b",
+     "@vk_ads",
+     "@marylevelia_ads",
+     "@adsisnotacrime",
+     "@jobfortarget",
 ]
 
 # ── Прокси (опционально) ─────────────────────────────────
