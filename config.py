@@ -65,13 +65,13 @@ RSS_SOURCES: list[dict] = [
     },
     {
         "name": "Sostav.ru",
-        "url": "https://www.sostav.ru/rss/news.xml",
+        "url": "https://www.sostav.ru/rss/news/marketing.xml",
         "lang": "ru",
         "emoji": "📢",
     },
     {
         "name": "AdIndex",
-        "url": "https://adindex.ru/rss/news.xml",
+        "url": "https://adindex.ru/rss/news/all.xml",
         "lang": "ru",
         "emoji": "📈",
     },
@@ -83,13 +83,13 @@ RSS_SOURCES: list[dict] = [
     },
     {
         "name": "Хабр / Маркетинг",
-        "url": "https://habr.com/ru/rss/hub/marketing/",
+        "url": "https://habr.com/ru/flows/marketing/articles/",
         "lang": "ru",
         "emoji": "🛠",
     },
     {
         "name": "Texterra",
-        "url": "https://texterra.ru/rss.xml",
+        "url": "https://texterra.ru/blog/novosti/.xml",
         "lang": "ru",
         "emoji": "✍️",
     },
