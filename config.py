@@ -13,14 +13,14 @@ CHANNEL_ID: str = os.getenv("CHANNEL_ID", "")  # напр. @my_channel или -1
 
 # ── Расписание ───────────────────────────────────────────
 # Как часто парсить новости (в минутах)
-PARSE_INTERVAL_MINUTES: int = int(os.getenv("PARSE_INTERVAL_MINUTES", "30"))
+PARSE_INTERVAL_MINUTES: int = int(os.getenv("PARSE_INTERVAL_MINUTES", "360"))
 
 # Максимум постов за один прогон (антиспам)
-MAX_POSTS_PER_RUN: int = int(os.getenv("MAX_POSTS_PER_RUN", "5"))
+MAX_POSTS_PER_RUN: int = int(os.getenv("MAX_POSTS_PER_RUN", "15"))
 
 # Часы тишины: не постить с 23:00 до 07:00 (МСК)
 QUIET_HOURS_START: int = int(os.getenv("QUIET_HOURS_START", "23"))
-QUIET_HOURS_END: int = int(os.getenv("QUIET_HOURS_END", "7"))
+QUIET_HOURS_END: int = int(os.getenv("QUIET_HOURS_END", "10"))
 
 # ── База данных ───────────────────────────────────────────
 DB_PATH: str = os.getenv("DB_PATH", "news.db")
@@ -38,7 +38,8 @@ INCLUDE_KEYWORDS: list[str] = [
     "нейросеть", "AI", "ИИ", "чат-бот", "chatbot",
     "Instagram", "VK", "TikTok", "YouTube",
     "email-маркетинг", "SEO", "SEM",
-    "advertising", "marketing", "targeting", "digital",
+    "advertising", "marketing", "targeting", "digital", "Avito", "Avito ADS",
+    "Авито", "Авито реклама", 
 ]
 
 # Слова-стоп (если есть — пропускаем новость)
@@ -92,31 +93,7 @@ RSS_SOURCES: list[dict] = [
         "lang": "ru",
         "emoji": "✍️",
     },
-    # Международные
-    {
-        "name": "Search Engine Land",
-        "url": "https://searchengineland.com/feed",
-        "lang": "en",
-        "emoji": "🔍",
-    },
-    {
-        "name": "Marketing Dive",
-        "url": "https://www.marketingdive.com/feeds/news/",
-        "lang": "en",
-        "emoji": "🌊",
-    },
-    {
-        "name": "Social Media Examiner",
-        "url": "https://www.socialmediaexaminer.com/feed/",
-        "lang": "en",
-        "emoji": "📲",
-    },
-    {
-        "name": "AdWeek",
-        "url": "https://www.adweek.com/feed/",
-        "lang": "en",
-        "emoji": "🏆",
-    },
+   
 ]
 
 # ── Telethon (опционально) ────────────────────────────────
@@ -126,10 +103,13 @@ TELETHON_API_HASH: str = os.getenv("TELETHON_API_HASH", "")
 
 # Список Telegram-каналов для парсинга (публичные)
 TG_CHANNELS_TO_PARSE: list[str] = [
-    # "@digitalagency_list",
-    # "@targetads_news",
-    # "@cossa_official",
-    # "@vcru",
+     "@digitalagency_list",
+     "@targetads_news",
+     "@cossa_official",
+     "@vcru",
+     "@adsisnotacrime",
+     "@vk_ads",
+     "@vkontakte_hq",
 ]
 
 # ── Прокси (опционально) ─────────────────────────────────
